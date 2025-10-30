@@ -5,12 +5,14 @@
 import re
 import pdfplumber
 from typing import Dict, Set, Optional, Tuple
-from pdf2image import convert_from_path
-import pytesseract
-from PIL import Image
 import os
 import json
 import requests
+
+# OCR 相关的导入延迟到使用时（避免部署时缺少依赖报错）
+# from pdf2image import convert_from_path
+# import pytesseract
+# from PIL import Image
 
 # 从基础解析器导入函数
 from pdf_parser import extract_name

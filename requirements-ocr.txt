@@ -1,9 +1,0 @@
-# OCR 依赖 - 支持扫描版 PDF
-# 安装命令: 
-# 1. pip install -r requirements-minimal.txt
-# 2. pip install -r requirements-ocr.txt
-# 3. brew install tesseract tesseract-lang poppler (macOS)
-
-pdf2image==1.16.3
-pytesseract==0.3.10
-

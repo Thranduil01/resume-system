@@ -1,5 +1,0 @@
-# Grok API 依赖 - AI 智能识别
-# 安装命令: pip install -r requirements-grok.txt
-
-xai-sdk==1.3.1
-
