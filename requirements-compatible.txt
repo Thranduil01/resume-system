@@ -1,0 +1,11 @@
+# 兼容所有 Python 版本的依赖配置
+# 适用于 Python 3.8 - 3.13+
+# 不指定具体版本，自动安装最新兼容版本
+
+Flask
+pdfplumber
+Werkzeug
+Pillow
+PyMuPDF
+requests
+

@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# 上传的文件（临时存储）
+uploads/
+*.pdf
+
+# Logs
+*.log
+server.log
+nohup.out
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Environment
+.env
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# 测试文件夹
+pdf test/
+test_pdfs/
+

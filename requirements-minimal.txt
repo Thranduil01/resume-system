@@ -1,0 +1,11 @@
+# 最小依赖 - 仅支持文本型 PDF
+# 安装命令: pip install -r requirements-minimal.txt
+# 兼容 Python 3.8 - 3.13
+
+Flask>=3.0.0
+pdfplumber>=0.11.0
+Werkzeug>=3.0.1
+Pillow>=10.3.0
+PyMuPDF>=1.23.0
+requests>=2.31.0
+
