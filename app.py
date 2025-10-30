@@ -248,6 +248,10 @@ if __name__ == '__main__':
     print("简历信息提取系统已启动")
     print(f"请在浏览器中访问: http://127.0.0.1:{port}")
     print("=" * 50)
-    app.run(debug=True, host='0.0.0.0', port=port)
+    
+    # 根据环境决定是否开启 debug
+    # 生产环境（有 PORT 环境变量）关闭 debug
+    is_production = 'PORT' in os.environ
+    app.run(debug=not is_production, host='0.0.0.0', port=port)
 
 
