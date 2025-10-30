@@ -1,6 +1,7 @@
 """
 PDF 简历解析器
 从 PDF 中提取邮箱、学校、年级等信息
+优化版：增强邮箱、学校和年级识别能力
 """
 import re
 import pdfplumber
@@ -33,19 +34,34 @@ GRADE_KEYWORDS = [
 
 
 def extract_emails(text: str) -> Set[str]:
-    """从文本中提取邮箱"""
-    text = re.sub(r"\s+", " ", text)
-    raw = EMAIL_RE.findall(text)
-    return {
-        re.sub(r"^[\s\|丨/\\,;:]+|[\s\|丨/\\,;:]+$", "", re.sub(r"\s+", "", m))
-        for m in raw
-    }
+    """从文本中提取邮箱 - 增强版"""
+    # 多种邮箱格式支持
+    email_patterns = [
+        # 标准邮箱格式
+        r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}',
+        # 支持中文字符的邮箱
+        r'[\u4e00-\u9fa5A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}',
+        # 支持空格的邮箱（PDF提取可能带空格）
+        r'[A-Za-z0-9._%+-]+\s*@\s*[A-Za-z0-9.-]+\s*\.\s*[A-Z|a-z]{2,}'
+    ]
+    
+    emails = set()
+    for pattern in email_patterns:
+        matches = re.findall(pattern, text, re.I)
+        for match in matches:
+            # 清理邮箱中的空格和特殊字符
+            email = match.replace(" ", "").replace("\n", "").replace("\t", "")
+            # 验证邮箱格式
+            if '@' in email and '.' in email.split('@')[1]:
+                emails.add(email)
+    
+    return emails
 
 
 def extract_schools(text: str) -> Dict[str, Optional[str]]:
     """
-    从文本中提取学校信息
-    尝试识别本科学校和研究生学校
+    从文本中提取学校信息 - 增强版
+    智能识别本科学校和研究生学校（支持根据时间判断）
     """
     result = {
         "undergraduate_school": None,
@@ -84,21 +100,43 @@ def extract_schools(text: str) -> Dict[str, Optional[str]]:
                             result["graduate_school"] = school_name
                         break
     
-    # 如果没有找到明确的本科/研究生标记，尝试找出所有出现的学校
+    # 如果没有找到明确的本科/研究生标记，尝试根据时间智能识别
     if not result["undergraduate_school"] and not result["graduate_school"]:
-        schools_found = []
-        for line in lines:
-            school_match = re.search(r'[\u4e00-\u9fa5A-Za-z\s&]+(?:大学|学院|University|College)', line)
+        schools_with_dates = []
+        for i, line in enumerate(lines):
+            # 匹配学校名称
+            school_match = re.search(r'([\u4e00-\u9fa5A-Za-z\s&]+(?:大学|学院|University|College))', line)
             if school_match:
-                school_name = school_match.group(0).strip()
-                if school_name not in schools_found:
-                    schools_found.append(school_name)
+                school_name = school_match.group(1).strip()
+                # 尝试找到相关的时间信息（前后3行内）
+                date_info = ""
+                for j in range(max(0, i-3), min(len(lines), i+4)):
+                    # 匹配时间格式：2022.9-2026.6 或 2022-2026 等
+                    date_match = re.search(r'(20\d{2}[\.\-/]?\d{0,2}[\s\-～~到至]*20\d{2}[\.\-/]?\d{0,2})', lines[j])
+                    if date_match:
+                        date_info = date_match.group(1)
+                        break
+                
+                # 避免重复添加
+                if school_name not in [s[0] for s in schools_with_dates]:
+                    schools_with_dates.append((school_name, date_info))
         
-        # 如果找到学校，将第一个作为本科学校（通常简历会先写本科）
-        if schools_found:
-            result["undergraduate_school"] = schools_found[0]
-            if len(schools_found) > 1:
-                result["graduate_school"] = schools_found[1]
+        # 根据时间判断本科和研究生
+        if schools_with_dates:
+            # 按时间排序（早的优先）
+            schools_with_dates.sort(key=lambda x: x[1] if x[1] else "9999")
+            
+            # 第一个通常是本科
+            result["undergraduate_school"] = schools_with_dates[0][0]
+            
+            # 如果有第二个，判断是否是研究生
+            if len(schools_with_dates) > 1:
+                second_date = schools_with_dates[1][1]
+                # 如果时间包含2026年或更晚，很可能是研究生
+                if second_date and any(year in second_date for year in ['2026', '2027', '2028', '2029', '2030']):
+                    result["graduate_school"] = schools_with_dates[1][0]
+                elif schools_with_dates[1][0] != result["undergraduate_school"]:
+                    result["graduate_school"] = schools_with_dates[1][0]
     
     return result
 
@@ -128,7 +166,7 @@ def extract_name(text: str) -> Optional[str]:
         # 检查是否包含"姓名"、"Name"等关键词
         if any(keyword in line for keyword in ["姓名", "Name", "name"]):
             # 尝试提取关键词后面的内容
-            name_match = re.search(r'(?:姓名|Name|name)[：:\s]+([\\u4e00-\\u9fa5A-Za-z\s]+)', line)
+            name_match = re.search(r'(?:姓名|Name|name)[：:\s]+([\u4e00-\u9fa5A-Za-z\s]+)', line)
             if name_match:
                 return name_match.group(1).strip()
     
@@ -136,7 +174,7 @@ def extract_name(text: str) -> Optional[str]:
 
 
 def extract_grade(text: str) -> Optional[str]:
-    """从文本中提取年级信息"""
+    """从文本中提取年级信息 - 增强版（支持根据时间推断）"""
     # 标准化文本
     text_lower = text.lower()
     
@@ -155,7 +193,32 @@ def extract_grade(text: str) -> Optional[str]:
     if grade_match:
         return f"{grade_match.group(1)}{grade_match.group(2)}"
     
-    # 匹配英文年级（大写或小写）
+    # 根据入学时间推断年级（新增功能）
+    date_match = re.search(r'(20\d{2})[\.\-/]?\d{0,2}[\s\-～~到至]*(20\d{2})[\.\-/]?\d{0,2}', text)
+    if date_match:
+        start_year = int(date_match.group(1))
+        end_year = int(date_match.group(2))
+        duration = end_year - start_year
+        
+        # 根据当前年份推断年级
+        current_year = 2025
+        years_passed = current_year - start_year
+        
+        # 4年制本科
+        if duration == 4 and 0 < years_passed <= 4:
+            grade_map = {1: "大一", 2: "大二", 3: "大三", 4: "大四"}
+            return grade_map.get(years_passed, f"大{years_passed}")
+        
+        # 2-3年制研究生
+        elif duration <= 3 and end_year >= 2026:
+            if years_passed <= 0:
+                return "研一"  # 还未入学或刚入学
+            elif years_passed == 1:
+                return "研二"
+            elif years_passed == 2:
+                return "研三"
+    
+    # 匹配英文年级
     if "freshman" in text_lower:
         return "大一"
     elif "sophomore" in text_lower:
@@ -165,7 +228,7 @@ def extract_grade(text: str) -> Optional[str]:
     elif "senior" in text_lower:
         return "大四"
     
-    # 匹配"first/second/third/fourth year" + "undergraduate/graduate"
+    # 匹配"first/second/third/fourth year"
     year_match = re.search(r'(first|second|third|fourth)\s+year\s*(undergraduate|graduate)?', text_lower)
     if year_match:
         year_map = {"first": "一", "second": "二", "third": "三", "fourth": "四"}
@@ -235,5 +298,3 @@ def parse_multiple_pdfs(pdf_paths: list) -> list:
         results.append(result)
     
     return results
-
-
