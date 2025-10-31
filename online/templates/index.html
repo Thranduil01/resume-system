@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简历信息提取系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --paper-bg: #F2F1ED;
+            --paper-light: #FAFAF8;
+            --text-dark: #2D2D2D;
+            --text-gray: #6B6B6B;
+            --text-light: #9B9B9B;
+            --line-color: #D4D3CE;
+            --line-dark: #8B8B8B;
+            --accent-orange: #E67E50;
+            --accent-blue: #4A5568;
+            --dot-color: #2D2D2D;
+            --border-radius: 2px;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: var(--paper-bg);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: var(--text-dark);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--paper-light);
+            border: 1px solid var(--line-color);
+            padding: 60px 80px;
+        }
+        
+        h1 {
+            color: var(--text-dark);
+            text-align: left;
+            margin-bottom: 8px;
+            font-size: 2em;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            border-bottom: 2px solid var(--text-dark);
+            padding-bottom: 16px;
+        }
+        
+        .subtitle {
+            text-align: left;
+            color: var(--text-gray);
+            margin-bottom: 48px;
+            font-size: 0.95em;
+            font-weight: 400;
+        }
+        
+        .input-section {
+            background: transparent;
+            padding: 0;
+            margin-bottom: 48px;
+            border-top: 1px solid var(--line-color);
+            padding-top: 32px;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        
+        input[type="text"], input[type="password"] {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--line-color);
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            transition: border-color 0.2s;
+            background: white;
+            color: var(--text-dark);
+            font-family: inherit;
+        }
+        
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: var(--text-dark);
+        }
+        
+        input[type="text"]::placeholder, input[type="password"]::placeholder {
+            color: var(--text-light);
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: 1px solid var(--text-dark);
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            letter-spacing: 0.01em;
+        }
+        
+        .btn-primary {
+            background: var(--text-dark);
+            color: var(--paper-light);
+            border-color: var(--text-dark);
+        }
+        
+        .btn-primary:hover {
+            background: var(--dot-color);
+            border-color: var(--dot-color);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-dark);
+            border-color: var(--line-dark);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--paper-bg);
+            border-color: var(--text-dark);
+        }
+        
+        .btn-danger {
+            background: transparent;
+            color: #C84B31;
+            border-color: #C84B31;
+        }
+        
+        .btn-danger:hover {
+            background: #C84B31;
+            color: white;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        
+        .status-message {
+            padding: 12px 16px;
+            border-radius: var(--border-radius);
+            margin-bottom: 24px;
+            display: none;
+            font-size: 14px;
+            border-left: 3px solid;
+        }
+        
+        .status-success {
+            background: #F0F7F4;
+            color: #2F5D4B;
+            border-left-color: #4A9B7F;
+        }
+        
+        .status-error {
+            background: #F7F0F0;
+            color: #6B3838;
+            border-left-color: #C84B31;
+        }
+        
+        .data-section {
+            margin-top: 30px;
+        }
+        
+        .section-title {
+            font-size: 1.1em;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--line-color);
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+        
+        .email-container {
+            background: white;
+            padding: 24px;
+            border: 1px solid var(--line-color);
+            border-radius: var(--border-radius);
+            margin-bottom: 32px;
+        }
+        
+        .email-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .email-tag {
+            background: var(--paper-bg);
+            padding: 6px 12px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--line-color);
+            color: var(--text-dark);
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .copy-area {
+            background: var(--paper-bg);
+            padding: 16px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--line-color);
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            word-break: break-all;
+            margin-top: 12px;
+            cursor: pointer;
+            position: relative;
+            color: var(--text-dark);
+        }
+        
+        .copy-area:hover {
+            border-color: var(--line-dark);
+        }
+        
+        .copy-button {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 6px 12px;
+            font-size: 12px;
+            background: var(--accent-orange) !important;
+            color: white !important;
+            border: none !important;
+        }
+        
+        .copy-button:hover {
+            background: #D66B3F !important;
+        }
+        
+        .table-container {
+            background: white;
+            padding: 0;
+            border: 1px solid var(--line-color);
+            border-radius: var(--border-radius);
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        
+        thead {
+            background: var(--paper-bg);
+            color: var(--text-dark);
+        }
+        
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--line-color);
+            font-size: 14px;
+        }
+        
+        th {
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-gray);
+        }
+        
+        tbody tr:hover {
+            background: #FAFAF8;
+        }
+        
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .markdown-table {
+            background: var(--paper-bg);
+            padding: 16px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--line-color);
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre;
+            overflow-x: auto;
+            margin-top: 16px;
+            color: var(--text-dark);
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 32px;
+            color: var(--text-gray);
+            font-size: 14px;
+        }
+        
+        .spinner {
+            border: 2px solid var(--line-color);
+            border-top: 2px solid var(--text-dark);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 0.8s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
+            background: white;
+            border: 1px solid var(--line-color);
+            border-radius: var(--border-radius);
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            padding: 20px 24px;
+            border-right: 1px solid var(--line-color);
+        }
+        
+        .stat-item:last-child {
+            border-right: none;
+        }
+        
+        .stat-item.highlight {
+            background: var(--paper-bg);
+            border-left: 3px solid var(--accent-orange);
+            border-right: none;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: 600;
+            color: var(--text-dark);
+            font-feature-settings: 'tnum';
+            letter-spacing: -0.02em;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        
+        .stat-item.highlight .stat-number {
+            font-size: 2.5em;
+            color: var(--accent-orange);
+        }
+        
+        .stat-label {
+            font-size: 0.75em;
+            color: var(--text-gray);
+            line-height: 1.4;
+            font-weight: 500;
+        }
+        
+        .stat-item.highlight .stat-label {
+            font-size: 0.85em;
+            color: var(--text-dark);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-light);
+        }
+        
+        .empty-state h3 {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-gray);
+        }
+        
+        .empty-state p {
+            font-size: 0.9em;
+        }
+        
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+            stroke: var(--line-dark);
+        }
+        
+        /* 折叠面板样式 */
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            padding: 16px 20px;
+            background: white;
+            border: 1px solid var(--line-color);
+            border-radius: var(--border-radius);
+            transition: background-color 0.2s;
+        }
+        
+        .collapsible-header:hover {
+            background: var(--paper-bg);
+        }
+        
+        .collapsible-header h3 {
+            margin: 0;
+            color: var(--text-dark);
+            font-size: 0.95em;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+        
+        .collapsible-arrow {
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 6px solid var(--text-gray);
+            transition: transform 0.3s ease;
+        }
+        
+        .collapsible-arrow.open {
+            transform: rotate(180deg);
+        }
+        
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .collapsible-content.open {
+            max-height: 500px;
+        }
+        
+        .collapsible-content-inner {
+            padding: 20px;
+            background: white;
+            border: 1px solid var(--line-color);
+            border-top: none;
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+        }
+        
+        .upload-area {
+            border: 2px dashed var(--line-color);
+            border-radius: var(--border-radius);
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--text-dark);
+            background: var(--paper-bg);
+        }
+        
+        .upload-area.dragover {
+            border-color: var(--accent-orange);
+            background: var(--paper-bg);
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            color: var(--text-gray);
+            margin-bottom: 16px;
+        }
+        
+        .file-list {
+            margin-top: 16px;
+            text-align: left;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: var(--paper-bg);
+            border-radius: var(--border-radius);
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        
+        .file-item button {
+            padding: 4px 8px;
+            font-size: 12px;
+            background: transparent;
+            border: 1px solid var(--line-color);
+            color: var(--text-gray);
+        }
+        
+        .file-item button:hover {
+            background: white;
+            color: var(--accent-orange);
+            border-color: var(--accent-orange);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>简历信息提取系统</h1>
+        <p class="subtitle">自动提取PDF简历中的邮箱、学校、年级信息</p>
+        
+        <div class="input-section">
+            <!-- 文件上传 -->
+            <div>
+                <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📄</div>
+                    <p style="color: var(--text-dark); font-size: 15px; margin-bottom: 8px;">点击或拖拽上传 PDF 文件</p>
+                    <p style="color: var(--text-gray); font-size: 13px;">支持批量上传，单个文件最大 50MB</p>
+                </div>
+                <input type="file" id="fileInput" multiple accept=".pdf" style="display: none;" onchange="handleFiles(this.files)">
+                
+                <div id="fileList" class="file-list" style="display: none;"></div>
+                
+                <div style="margin-top: 16px; text-align: center;">
+                    <button class="btn-primary" id="uploadButton" onclick="uploadPDFs()" style="display: none;">开始解析上传的文件</button>
+                </div>
+            </div>
+            
+            <div style="margin-top: 24px;">
+                <div class="collapsible-header" onclick="toggleAdvancedOptions()">
+                    <h3>高级选项</h3>
+                    <div class="collapsible-arrow" id="advancedArrow"></div>
+                </div>
+                
+                <div class="collapsible-content" id="advancedContent">
+                    <div class="collapsible-content-inner">
+                        <div style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" id="useOcr" checked style="margin-right: 10px; width: 18px; height: 18px; cursor: pointer;">
+                        <span style="font-size: 14px;">
+                            <strong>启用 OCR 识别</strong> 
+                            <span style="color: var(--text-gray); font-size: 12px;">（推荐：当文本提取失败时自动使用 OCR）</span>
+                        </span>
+                    </label>
+                </div>
+                
+                <div style="margin-bottom: 10px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: var(--text-dark);">
+                        Grok API Key（可选）：
+                    </label>
+                    <input type="password" id="grokApiKey" placeholder="输入 Grok API Key 启用 AI 智能识别" 
+                           style="width: 100%; padding: 12px 16px; border: 1px solid var(--line-color); border-radius: var(--border-radius); font-size: 14px;">
+                    <p style="margin-top: 6px; font-size: 12px; color: var(--text-light);">
+                        提示：启用 Grok API 可使用 AI 视觉模型智能识别简历。
+                        <a href="https://x.ai" target="_blank" style="color: var(--accent-orange); text-decoration: none;">获取 API Key</a>
+                    </p>
+                </div>
+                
+                <div style="padding: 12px 16px; background: var(--paper-bg); border-left: 2px solid var(--line-dark); border-radius: var(--border-radius); margin-top: 16px;">
+                    <strong style="color: var(--text-dark); font-size: 13px;">识别策略（三级智能识别）</strong>
+                    <ol style="margin: 8px 0 0 20px; color: var(--text-gray); font-size: 13px; line-height: 1.6;">
+                        <li>第一级：普通文本提取（速度快）</li>
+                        <li>第二级：OCR 光学识别（适用于扫描版 PDF）</li>
+                        <li>第三级：Grok AI 智能识别（最强大，需要 API Key）</li>
+                    </ol>
+                </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button class="btn-secondary" onclick="loadData()">刷新数据</button>
+                <button class="btn-danger" onclick="clearDatabase()">清空数据库</button>
+            </div>
+        </div>
+        
+        <div id="statusMessage" class="status-message"></div>
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>正在解析PDF文件，请稍候...</p>
+        </div>
+        
+        <div class="data-section" id="emailSection" style="display: none;">
+            <h2 class="section-title">邮箱列表</h2>
+            <div class="email-container">
+                <div class="email-list" id="emailList"></div>
+                <div class="copy-area" id="emailCopyArea" onclick="copyEmails()">
+                    <button class="copy-button btn-primary">复制</button>
+                    <div id="emailText"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="statsSection" style="display: none; margin-bottom: 32px;">
+            <div class="stats">
+                <div class="stat-item">
+                    <div>
+                        <div class="stat-number" id="totalResumes">0</div>
+                        <div class="stat-label">简历总数</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div>
+                        <div class="stat-number" id="totalEmails">0</div>
+                        <div class="stat-label">提取邮箱数</div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div>
+                        <div class="stat-number" id="duplicateEmails">0</div>
+                        <div class="stat-label">重复邮箱数</div>
+                    </div>
+                </div>
+                <div class="stat-item highlight">
+                    <div>
+                        <div class="stat-number" id="missingEmails">0</div>
+                        <div class="stat-label">未提取数量</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="data-section" id="tableSection" style="display: none;">
+            <h2 class="section-title">简历信息表格</h2>
+            <div class="table-container">
+                <table id="resumeTable">
+                    <thead>
+                        <tr>
+                            <th>序号</th>
+                            <th>姓名</th>
+                            <th>文件名</th>
+                            <th>邮箱</th>
+                            <th>本科学校</th>
+                            <th>研究生学校</th>
+                            <th>当前年级</th>
+                            <th>创建时间</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resumeTableBody">
+                    </tbody>
+                </table>
+            </div>
+            
+            <h3 class="section-title" style="margin-top: 30px;">📝 Markdown 格式表格</h3>
+            <button class="btn-primary" onclick="copyMarkdown()" style="margin-bottom: 10px;">📋 复制 Markdown</button>
+            <div class="markdown-table" id="markdownTable"></div>
+        </div>
+        
+        <div id="emptyState" class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3>暂无数据</h3>
+            <p>请上传PDF文件开始解析</p>
+        </div>
+    </div>
+    
+    <script>
+        // 页面加载时获取数据
+        window.onload = function() {
+            loadData();
+            loadSavedSettings();
+        };
+        
+        // 切换高级选项的显示/隐藏
+        function toggleAdvancedOptions() {
+            const content = document.getElementById('advancedContent');
+            const arrow = document.getElementById('advancedArrow');
+            
+            content.classList.toggle('open');
+            arrow.classList.toggle('open');
+        }
+        
+        // 从 localStorage 加载保存的设置
+        function loadSavedSettings() {
+            // 加载上次的 OCR 选项
+            const savedOcr = localStorage.getItem('useOcr');
+            if (savedOcr !== null) {
+                document.getElementById('useOcr').checked = (savedOcr === 'true');
+            }
+            
+            // 加载上次的 Grok API Key（如果有）
+            const savedApiKey = localStorage.getItem('grokApiKey');
+            if (savedApiKey) {
+                document.getElementById('grokApiKey').value = savedApiKey;
+            }
+        }
+        
+        // 保存设置到 localStorage
+        function saveSettings(useOcr, grokApiKey) {
+            localStorage.setItem('useOcr', useOcr.toString());
+            if (grokApiKey) {
+                localStorage.setItem('grokApiKey', grokApiKey);
+            }
+        }
+        
+        // 存储上传的文件
+        let uploadedFiles = [];
+        
+        // 处理文件选择
+        function handleFiles(files) {
+            uploadedFiles = Array.from(files);
+            displayFileList();
+        }
+        
+        // 显示文件列表
+        function displayFileList() {
+            const fileList = document.getElementById('fileList');
+            const uploadButton = document.getElementById('uploadButton');
+            
+            if (uploadedFiles.length === 0) {
+                fileList.style.display = 'none';
+                uploadButton.style.display = 'none';
+                return;
+            }
+            
+            fileList.style.display = 'block';
+            uploadButton.style.display = 'inline-block';
+            
+            fileList.innerHTML = `
+                <p style="font-size: 14px; color: var(--text-dark); margin-bottom: 12px; font-weight: 600;">
+                    已选择 ${uploadedFiles.length} 个文件
+                </p>
+                ${uploadedFiles.map((file, index) => `
+                    <div class="file-item">
+                        <span>📄 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                        <button onclick="removeFile(${index})">删除</button>
+                    </div>
+                `).join('')}
+            `;
+        }
+        
+        // 移除文件
+        function removeFile(index) {
+            uploadedFiles.splice(index, 1);
+            displayFileList();
+        }
+        
+        // 拖拽上传功能
+        const uploadArea = document.getElementById('uploadArea');
+        if (uploadArea) {
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                handleFiles(files);
+            });
+        }
+        
+        // 上传并解析PDF文件
+        async function uploadPDFs() {
+            if (uploadedFiles.length === 0) {
+                showMessage('请先选择PDF文件', 'error');
+                return;
+            }
+            
+            const useOcr = document.getElementById('useOcr').checked;
+            const grokApiKey = document.getElementById('grokApiKey').value.trim();
+            
+            // 保存设置
+            saveSettings(useOcr, grokApiKey);
+            
+            showLoading(true);
+            hideMessage();
+            
+            try {
+                const formData = new FormData();
+                
+                // 添加文件
+                uploadedFiles.forEach(file => {
+                    formData.append('files', file);
+                });
+                
+                // 添加配置
+                formData.append('use_ocr', useOcr);
+                if (grokApiKey) {
+                    formData.append('grok_api_key', grokApiKey);
+                }
+                
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showMessage(result.message, 'success');
+                    loadData();
+                    
+                    // 清空文件列表
+                    uploadedFiles = [];
+                    displayFileList();
+                    document.getElementById('fileInput').value = '';
+                } else {
+                    showMessage(result.error || '解析失败', 'error');
+                }
+            } catch (error) {
+                showMessage('网络错误: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // 加载所有数据
+        async function loadData() {
+            try {
+                // 获取简历数据
+                const resumesResponse = await fetch('/api/resumes');
+                const resumesData = await resumesResponse.json();
+                
+                // 获取邮箱数据
+                const emailsResponse = await fetch('/api/emails');
+                const emailsData = await emailsResponse.json();
+                
+                if (resumesData.success && emailsData.success) {
+                    displayEmails(emailsData.emails);
+                    displayResumes(resumesData.resumes);
+                    updateStats(resumesData.resumes, emailsData.emails);
+                    
+                    if (resumesData.resumes.length > 0) {
+                        document.getElementById('emptyState').style.display = 'none';
+                    } else {
+                        document.getElementById('emptyState').style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+            }
+        }
+        
+        // 更新统计信息
+        function updateStats(resumes, emails) {
+            const totalResumes = resumes.length;
+            const totalEmails = emails.length;
+            
+            // 计算未提取邮箱的简历数量
+            const missingEmails = resumes.filter(r => !r.email || r.email.trim() === '').length;
+            
+            // 计算重复邮箱数量
+            const emailCounts = {};
+            resumes.forEach(r => {
+                if (r.email && r.email.trim() !== '') {
+                    emailCounts[r.email] = (emailCounts[r.email] || 0) + 1;
+                }
+            });
+            const duplicateEmails = Object.values(emailCounts).filter(count => count > 1).length;
+            
+            document.getElementById('totalResumes').textContent = totalResumes;
+            document.getElementById('totalEmails').textContent = totalEmails;
+            document.getElementById('duplicateEmails').textContent = duplicateEmails;
+            document.getElementById('missingEmails').textContent = missingEmails;
+            
+            if (totalResumes > 0) {
+                document.getElementById('statsSection').style.display = 'block';
+            }
+        }
+        
+        // 显示邮箱
+        function displayEmails(emails) {
+            const emailSection = document.getElementById('emailSection');
+            const emailList = document.getElementById('emailList');
+            const emailText = document.getElementById('emailText');
+            
+            if (emails.length === 0) {
+                emailSection.style.display = 'none';
+                return;
+            }
+            
+            emailSection.style.display = 'block';
+            
+            // 显示邮箱标签
+            emailList.innerHTML = emails.map(email => 
+                `<span class="email-tag">${email}</span>`
+            ).join('');
+            
+            // 显示可复制的邮箱文本（用分号分隔）
+            emailText.textContent = emails.join('; ');
+        }
+        
+        // 显示简历表格
+        function displayResumes(resumes) {
+            const tableSection = document.getElementById('tableSection');
+            const tableBody = document.getElementById('resumeTableBody');
+            const markdownTable = document.getElementById('markdownTable');
+            
+            if (resumes.length === 0) {
+                tableSection.style.display = 'none';
+                return;
+            }
+            
+            tableSection.style.display = 'block';
+            
+            // HTML表格
+            tableBody.innerHTML = resumes.map((resume, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${resume.name || '-'}</td>
+                    <td>${resume.filename}</td>
+                    <td>${resume.email || '-'}</td>
+                    <td>${resume.undergraduate_school || '-'}</td>
+                    <td>${resume.graduate_school || '-'}</td>
+                    <td>${resume.current_grade || '-'}</td>
+                    <td>${formatDate(resume.created_at)}</td>
+                </tr>
+            `).join('');
+            
+            // Markdown表格
+            let markdown = '| 序号 | 姓名 | 文件名 | 邮箱 | 本科学校 | 研究生学校 | 当前年级 |\n';
+            markdown += '|------|------|--------|------|----------|------------|----------|\n';
+            
+            resumes.forEach((resume, index) => {
+                markdown += `| ${index + 1} | ${resume.name || '-'} | ${resume.filename} | ${resume.email || '-'} | ${resume.undergraduate_school || '-'} | ${resume.graduate_school || '-'} | ${resume.current_grade || '-'} |\n`;
+            });
+            
+            markdownTable.textContent = markdown;
+        }
+        
+        // 复制邮箱
+        function copyEmails() {
+            const emailText = document.getElementById('emailText').textContent;
+            navigator.clipboard.writeText(emailText).then(() => {
+                showMessage('邮箱已复制到剪贴板', 'success');
+            }).catch(() => {
+                showMessage('复制失败', 'error');
+            });
+        }
+        
+        // 复制Markdown表格
+        function copyMarkdown() {
+            const markdownText = document.getElementById('markdownTable').textContent;
+            navigator.clipboard.writeText(markdownText).then(() => {
+                showMessage('Markdown表格已复制到剪贴板', 'success');
+            }).catch(() => {
+                showMessage('复制失败', 'error');
+            });
+        }
+        
+        // 清空数据库
+        async function clearDatabase() {
+            if (!confirm('确定要清空所有数据吗？此操作不可恢复！')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/clear', {
+                    method: 'POST',
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('数据库已清空', 'success');
+                    loadData();
+                    document.getElementById('emptyState').style.display = 'block';
+                    document.getElementById('emailSection').style.display = 'none';
+                    document.getElementById('tableSection').style.display = 'none';
+                    document.getElementById('statsSection').style.display = 'none';
+                } else {
+                    showMessage('清空失败', 'error');
+                }
+            } catch (error) {
+                showMessage('请求失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 显示消息
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('statusMessage');
+            messageDiv.textContent = message;
+            messageDiv.className = 'status-message status-' + type;
+            messageDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // 隐藏消息
+        function hideMessage() {
+            document.getElementById('statusMessage').style.display = 'none';
+        }
+        
+        // 显示/隐藏加载动画
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        // 格式化日期
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    </script>
+</body>
+</html>
+
+

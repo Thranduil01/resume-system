@@ -24,7 +24,6 @@ uploads/*
 
 # 日志文件
 *.log
-server.log
 
 # 操作系统
 .DS_Store
@@ -39,5 +38,3 @@ Thumbs.db
 # 环境变量
 .env
 
-# PDF测试文件（可选，如果不想上传测试PDF）
-pdf test/*.pdf
