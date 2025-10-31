@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: resume-system
+    env: python
+    buildCommand: pip install -r requirements-compatible.txt
+    startCommand: python app.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+
