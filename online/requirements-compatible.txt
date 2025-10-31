@@ -8,4 +8,5 @@ Werkzeug
 Pillow
 PyMuPDF
 requests
+gunicorn
 

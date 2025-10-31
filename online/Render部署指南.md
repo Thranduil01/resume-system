@@ -21,8 +21,10 @@
    Root Directory: online          ⬅️ 关键：指定 online 文件夹
    Runtime:        Python 3
    Build Command:  pip install -r requirements-compatible.txt
-   Start Command:  python app.py
+   Start Command:  gunicorn --bind 0.0.0.0:$PORT app:app
    ```
+   
+   > 💡 **说明**：使用 Gunicorn 作为生产服务器，而不是 Flask 开发服务器
 
 5. **选择套餐**：
    - Free（免费，但会休眠）
