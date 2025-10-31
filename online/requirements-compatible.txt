@@ -9,4 +9,5 @@ Pillow
 PyMuPDF
 requests
 gunicorn
+APScheduler
 

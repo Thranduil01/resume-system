@@ -3,15 +3,23 @@ Flask Web 应用 - 线上部署版本
 提供网页界面用于上传PDF、查看和管理简历信息
 支持 OCR 和 Grok API 增强识别
 仅支持文件上传模式（适合云端部署）
+支持多用户数据隔离，自动清理1小时前的数据
 """
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 import os
+import secrets
+from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from database import ResumeDatabase
 from pdf_parser import parse_pdf
 from pdf_parser_enhanced import parse_pdf_enhanced
+from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
+
+# Flask Session 配置
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(32))
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)  # session 1小时过期
 
 # 文件上传配置
 UPLOAD_FOLDER = 'uploads'
@@ -24,6 +32,22 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 db = ResumeDatabase()
 
+# 启动后台定时任务清理过期数据
+scheduler = BackgroundScheduler()
+scheduler.add_job(
+    func=lambda: db.clean_expired_data(hours=1),
+    trigger="interval",
+    minutes=10  # 每10分钟清理一次过期数据
+)
+scheduler.start()
+
+def get_or_create_session_id():
+    """获取或创建用户的 session ID"""
+    if 'user_id' not in session:
+        session['user_id'] = secrets.token_urlsafe(32)
+        session.permanent = True  # 使用永久会话（实际受 PERMANENT_SESSION_LIFETIME 限制）
+    return session['user_id']
+
 def allowed_file(filename):
     """检查文件是否为允许的类型"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -31,6 +55,8 @@ def allowed_file(filename):
 @app.route('/')
 def index():
     """主页"""
+    # 确保用户有 session ID
+    get_or_create_session_id()
     return render_template('index.html')
 
 @app.route('/api/upload', methods=['POST'])
@@ -111,8 +137,12 @@ def process_pdf_files(pdf_files, use_ocr, grok_api_key):
                 grok_api_key=grok_api_key if grok_api_key else None
             )
             
-            # 存入数据库
+            # 获取当前用户的 session ID
+            session_id = get_or_create_session_id()
+            
+            # 存入数据库（关联到用户）
             resume_id = db.insert_resume(
+                session_id=session_id,
                 filename=filename,
                 name=parsed_data['name'],
                 email=parsed_data['email'],
@@ -147,8 +177,9 @@ def process_pdf_files(pdf_files, use_ocr, grok_api_key):
 
 @app.route('/api/resumes', methods=['GET'])
 def get_resumes():
-    """获取所有简历数据"""
-    resumes = db.get_all_resumes()
+    """获取当前用户的简历数据"""
+    session_id = get_or_create_session_id()
+    resumes = db.get_resumes_by_session(session_id)
     return jsonify({
         'success': True,
         'resumes': resumes
@@ -156,8 +187,9 @@ def get_resumes():
 
 @app.route('/api/emails', methods=['GET'])
 def get_emails():
-    """获取所有邮箱（去重）"""
-    emails = db.get_all_emails()
+    """获取当前用户的邮箱（去重）"""
+    session_id = get_or_create_session_id()
+    emails = db.get_emails_by_session(session_id)
     return jsonify({
         'success': True,
         'emails': emails,
@@ -166,12 +198,13 @@ def get_emails():
 
 @app.route('/api/clear', methods=['POST'])
 def clear_database():
-    """清空数据库"""
+    """清空当前用户的数据"""
     try:
-        db.clear_all()
+        session_id = get_or_create_session_id()
+        db.clear_by_session(session_id)
         return jsonify({
             'success': True,
-            'message': '数据库已清空'
+            'message': '数据已清空'
         })
     except Exception as e:
         return jsonify({
@@ -181,9 +214,10 @@ def clear_database():
 
 @app.route('/api/delete/<int:resume_id>', methods=['DELETE'])
 def delete_resume(resume_id):
-    """删除指定简历"""
+    """删除指定简历（仅限当前用户的数据）"""
     try:
-        db.delete_resume(resume_id)
+        session_id = get_or_create_session_id()
+        db.delete_resume(resume_id, session_id)
         return jsonify({
             'success': True,
             'message': '删除成功'
@@ -202,11 +236,17 @@ if __name__ == '__main__':
     print("=" * 50)
     print("简历信息提取系统（线上版）已启动")
     print(f"请在浏览器中访问: http://127.0.0.1:{port}")
+    print("💡 用户数据隔离已启用，数据将在1小时后自动清理")
     print("=" * 50)
     
     # 根据环境决定是否开启 debug
     # 生产环境（有 PORT 环境变量）关闭 debug
     is_production = 'PORT' in os.environ
-    app.run(debug=not is_production, host='0.0.0.0', port=port)
+    
+    try:
+        app.run(debug=not is_production, host='0.0.0.0', port=port)
+    finally:
+        # 关闭定时任务
+        scheduler.shutdown()
 
 
