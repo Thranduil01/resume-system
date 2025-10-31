@@ -9,6 +9,8 @@
 ✅ 三级智能识别（文本提取 → OCR → Grok AI）  
 ✅ 自动提取邮箱、姓名、学校、年级  
 ✅ 美观的数据展示和导出功能  
+✅ **多用户数据隔离**（基于Session）  
+✅ **自动清理过期数据**（1小时后自动删除）  
 
 ## 🚀 快速开始
 
@@ -62,12 +64,26 @@ python app.py
 web: python app.py
 ```
 
+## 🆕 V2.0 新功能：多用户数据隔离
+
+### 特性说明
+
+**问题**：多人同时使用时，数据会互相干扰  
+**解决**：基于 Session ID 自动识别用户，数据完全隔离
+
+- 🔐 每个用户只能看到自己上传的简历
+- 🕒 数据保存 1 小时后自动清理
+- 🚀 无需登录，自动识别
+- 🔄 后台定时清理任务
+
+详细说明请查看：[多用户隔离说明.md](./多用户隔离说明.md)
+
 ## 📦 文件结构
 
 ```
 online/
-├── app.py                      # Flask 应用（仅文件上传）
-├── database.py                 # 数据库操作
+├── app.py                      # Flask 应用（仅文件上传 + 多用户隔离）
+├── database.py                 # 数据库操作（支持用户隔离）
 ├── pdf_parser.py               # 基础PDF解析
 ├── pdf_parser_enhanced.py      # 增强版解析（OCR + Grok）
 ├── requirements-compatible.txt # 兼容版依赖
@@ -75,7 +91,9 @@ online/
 ├── templates/
 │   └── index.html             # 前端页面（仅上传模式）
 ├── uploads/                   # 临时上传文件夹
-└── README.md                  # 本文档
+├── README.md                  # 本文档
+├── Render部署指南.md           # 部署说明
+└── 多用户隔离说明.md           # 新功能说明
 ```
 
 ## 🔒 安全说明
