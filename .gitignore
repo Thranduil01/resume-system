@@ -17,6 +17,7 @@ ENV/
 *.db
 *.sqlite
 *.sqlite3
+*.db.backup
 
 # 上传的文件
 uploads/*
@@ -25,6 +26,14 @@ uploads/*
 # 日志文件
 *.log
 server.log
+
+# 临时文档和测试文件
+使用说明.md
+分享给别人.txt
+局域网*.bat
+局域网*.command
+局域网*.md
+启动系统.command
 
 # 操作系统
 .DS_Store

@@ -13,7 +13,15 @@ from werkzeug.utils import secure_filename
 from database import ResumeDatabase
 from pdf_parser import parse_pdf
 from pdf_parser_enhanced import parse_pdf_enhanced
-from apscheduler.schedulers.background import BackgroundScheduler
+
+# 尝试导入 APScheduler，如果没有则禁用自动清理
+try:
+    from apscheduler.schedulers.background import BackgroundScheduler
+    HAS_SCHEDULER = True
+except ImportError:
+    HAS_SCHEDULER = False
+    print("⚠️  警告：APScheduler 未安装，自动清理功能已禁用")
+    print("   安装方法：pip3 install APScheduler")
 
 app = Flask(__name__)
 
@@ -32,14 +40,17 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 db = ResumeDatabase()
 
-# 启动后台定时任务清理过期数据
-scheduler = BackgroundScheduler()
-scheduler.add_job(
-    func=lambda: db.clean_expired_data(hours=1),
-    trigger="interval",
-    minutes=10  # 每10分钟清理一次过期数据
-)
-scheduler.start()
+# 启动后台定时任务清理过期数据（如果可用）
+if HAS_SCHEDULER:
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(
+        func=lambda: db.clean_expired_data(hours=1),
+        trigger="interval",
+        minutes=10  # 每10分钟清理一次过期数据
+    )
+    scheduler.start()
+else:
+    scheduler = None
 
 def get_or_create_session_id():
     """获取或创建用户的 session ID"""
@@ -58,6 +69,18 @@ def index():
     # 确保用户有 session ID
     get_or_create_session_id()
     return render_template('index.html')
+
+@app.route('/api/session_info', methods=['GET'])
+def get_session_info():
+    """获取当前用户的 session 信息（用于调试）"""
+    session_id = get_or_create_session_id()
+    resume_count = db.get_session_count(session_id)
+    return jsonify({
+        'success': True,
+        'session_id': session_id[:16] + '...',  # 只显示前16位
+        'full_session_id': session_id,  # 完整ID用于调试
+        'resume_count': resume_count
+    })
 
 @app.route('/api/upload', methods=['POST'])
 def upload_files():
@@ -236,7 +259,11 @@ if __name__ == '__main__':
     print("=" * 50)
     print("简历信息提取系统（线上版）已启动")
     print(f"请在浏览器中访问: http://127.0.0.1:{port}")
-    print("💡 用户数据隔离已启用，数据将在1小时后自动清理")
+    print("💡 用户数据隔离已启用")
+    if HAS_SCHEDULER:
+        print("💡 自动清理已启用，数据将在1小时后自动删除")
+    else:
+        print("⚠️  自动清理功能未启用（需要安装 APScheduler）")
     print("=" * 50)
     
     # 根据环境决定是否开启 debug
@@ -246,7 +273,8 @@ if __name__ == '__main__':
     try:
         app.run(debug=not is_production, host='0.0.0.0', port=port)
     finally:
-        # 关闭定时任务
-        scheduler.shutdown()
+        # 关闭定时任务（如果存在）
+        if HAS_SCHEDULER and scheduler:
+            scheduler.shutdown()
 
 

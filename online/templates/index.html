@@ -514,6 +514,13 @@
         <h1>简历信息提取系统</h1>
         <p class="subtitle">自动提取PDF简历中的邮箱、学校、年级信息</p>
         
+        <!-- 调试信息：显示当前用户 Session ID -->
+        <div id="debugInfo" style="background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 4px; font-size: 12px; font-family: monospace; display: none;">
+            <strong>🔍 调试信息：</strong><br>
+            当前用户ID: <span id="sessionIdDisplay"></span><br>
+            <span style="color: #666;">（不同浏览器/无痕窗口应该显示不同的ID）</span>
+        </div>
+        
         <div class="input-section">
             <!-- 文件上传 -->
             <div>
@@ -665,7 +672,22 @@
         window.onload = function() {
             loadData();
             loadSavedSettings();
+            loadSessionInfo();
         };
+        
+        // 加载 Session 信息（调试用）
+        async function loadSessionInfo() {
+            try {
+                const response = await fetch('/api/session_info');
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('sessionIdDisplay').textContent = data.session_id;
+                    document.getElementById('debugInfo').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('加载 Session 信息失败:', error);
+            }
+        }
         
         // 切换高级选项的显示/隐藏
         function toggleAdvancedOptions() {
