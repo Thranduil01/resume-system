@@ -34,7 +34,7 @@ GRADE_KEYWORDS = [
 
 
 def extract_emails(text: str) -> Set[str]:
-    """从文本中提取邮箱 - 增强版"""
+    """从文本中提取邮箱 - 增强版（支持残缺邮箱修复）"""
     # 多种邮箱格式支持
     email_patterns = [
         # 标准邮箱格式
@@ -54,6 +54,49 @@ def extract_emails(text: str) -> Set[str]:
             # 验证邮箱格式
             if '@' in email and '.' in email.split('@')[1]:
                 emails.add(email)
+    
+    # 特殊处理：修复残缺的邮箱（如 "@qq.com"）
+    # 尝试从QQ号推断完整邮箱
+    if not emails and '@qq.com' in text.lower():
+        # 查找QQ号
+        qq_matches = re.findall(r'QQ[：:\s]*(\d{5,12})', text, re.I)
+        if qq_matches:
+            # 使用找到的QQ号构建完整邮箱
+            qq_num = qq_matches[0]
+            emails.add(f"{qq_num}@qq.com")
+            print(f"  💡 从QQ号修复邮箱: {qq_num}@qq.com")
+        else:
+            # 尝试查找纯数字QQ号
+            lines = text.split('\n')
+            for i, line in enumerate(lines):
+                if 'qq' in line.lower() or '邮箱' in line:
+                    # 在前后3行寻找数字
+                    for j in range(max(0, i-3), min(len(lines), i+4)):
+                        digits = re.findall(r'\b(\d{5,12})\b', lines[j])
+                        if digits:
+                            qq_num = digits[0]
+                            emails.add(f"{qq_num}@qq.com")
+                            print(f"  💡 从附近数字推断QQ邮箱: {qq_num}@qq.com")
+                            break
+                    if emails:
+                        break
+    
+    # 特殊处理：修复其他残缺邮箱
+    if not emails:
+        # 查找 @domain.com 格式并尝试从其他信息补全
+        incomplete_email = re.search(r'@(qq|163|126|outlook|gmail)\.(com|cn)', text, re.I)
+        if incomplete_email:
+            domain = incomplete_email.group(0)
+            # 查找可能的用户名（手机号、学号等）
+            possible_usernames = re.findall(r'\b(\d{5,15})\b', text)
+            if possible_usernames:
+                # 使用第一个看起来合理的数字
+                for username in possible_usernames:
+                    if len(username) >= 6:  # 合理的邮箱用户名长度
+                        email = f"{username}{domain}"
+                        emails.add(email)
+                        print(f"  💡 修复残缺邮箱: {email}")
+                        break
     
     return emails
 

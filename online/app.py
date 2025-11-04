@@ -108,19 +108,25 @@ def upload_files():
     
     # 保存上传的文件
     uploaded_files = []
+    uploaded_filenames = []  # 保存原始文件名
     for file in files:
         if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            # 使用UUID生成唯一文件名，避免中文问题和文件覆盖
+            import uuid
+            original_filename = file.filename
+            file_ext = os.path.splitext(original_filename)[1]  # 获取扩展名
+            unique_filename = f"{uuid.uuid4()}{file_ext}"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
             file.save(filepath)
             uploaded_files.append(filepath)
+            uploaded_filenames.append(original_filename)  # 保存原始文件名
     
     if not uploaded_files:
         return jsonify({'error': '没有有效的PDF文件'}), 400
     
-    # 解析PDF文件
+    # 解析PDF文件（传入原始文件名）
     results, success_count, error_count = process_pdf_files(
-        uploaded_files, use_ocr, grok_api_key
+        uploaded_files, uploaded_filenames, use_ocr, grok_api_key
     )
     
     # 清理上传的临时文件
@@ -140,18 +146,23 @@ def upload_files():
         'results': results
     })
 
-def process_pdf_files(pdf_files, use_ocr, grok_api_key):
+def process_pdf_files(pdf_files, original_filenames, use_ocr, grok_api_key):
     """
     处理PDF文件的通用函数
+    参数：
+        pdf_files: 临时文件路径列表
+        original_filenames: 原始文件名列表
+        use_ocr: 是否使用OCR
+        grok_api_key: Grok API密钥
     返回: (results, success_count, error_count)
     """
     results = []
     success_count = 0
     error_count = 0
     
-    for pdf_path in pdf_files:
+    for pdf_path, original_filename in zip(pdf_files, original_filenames):
         try:
-            filename = os.path.basename(pdf_path)
+            filename = original_filename  # 使用原始文件名而不是临时文件名
             
             # 使用增强版解析器
             parsed_data, method = parse_pdf_enhanced(
